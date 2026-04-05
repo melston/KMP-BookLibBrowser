@@ -1,0 +1,202 @@
+package org.elsoft.bkdb.ui
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import org.elsoft.bkdb.models.EBook
+
+@Composable
+fun BookListItem(
+    book: EBook, // Just the data
+    onEditClicked: (EBook) -> Unit,
+    onDeleteClicked: (EBook) -> Unit,
+    onToggleRead: (EBook) -> Unit,
+    onToggleFavorite: (EBook) -> Unit,
+    onOpenBook: (EBook) -> Unit,
+) {
+    // Define background color based on status
+    val backgroundColor = when {
+        book.isFavorite && book.isRead -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+        book.isRead -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        else -> MaterialTheme.colorScheme.surface
+    }
+    var isExpanded by remember { mutableStateOf(false) }
+
+    // Animation for the expansion arrow
+    val rotationState by animateFloatAsState(targetValue = if (isExpanded) 180f else 0f)
+
+    Card(
+        modifier = Modifier
+            .background(backgroundColor)
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 8.dp)
+            .clickable { isExpanded = !isExpanded },
+        shape = RoundedCornerShape(4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(8.dp)) {
+            // --- THE COMPACT HEADER (Always Visible) ---
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // 1. Expansion Indicator
+                Icon(
+                    imageVector = Icons.Default.PlayArrow, // Triangle shape
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(16.dp)
+                        .rotate(rotationState),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+
+                // 2. Title & Author
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 8.dp)
+                ) {
+                    Text(
+                        text = book.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        text = book.author,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                // 3. Status & Quick Actions
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    WithTooltip("Toggle is Read") {
+                        // Read Toggle
+                        IconButton(
+                            onClick = { onToggleRead(book) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (book.isRead) Icons.Default.CheckCircle else Icons.Default.RadioButtonUnchecked,
+                                contentDescription = "Read",
+                                tint = if (book.isRead) Color(0xFF4CAF50) else MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+
+                    WithTooltip("Toggle Favorite") {
+                        // Favorite Toggle
+                        IconButton(
+                            onClick = { onToggleFavorite(book) },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (book.isFavorite) Icons.Default.Star else Icons.Default.StarBorder,
+                                contentDescription = "Favorite",
+                                tint = if (book.isFavorite) Color(0xFFFFD700) else MaterialTheme.colorScheme.outline,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+
+                // Open Book (Launches Okular)
+                WithTooltip("Open") {
+                    IconButton(
+                        onClick = { onOpenBook(book) },
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                            contentDescription = "Open File",
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        // --- THE DETAILS SECTION (Hidden until clicked) ---
+        AnimatedVisibility(
+            visible = isExpanded,
+            enter = expandVertically(),
+            exit = shrinkVertically()
+        ) {
+            Column(modifier = Modifier.padding(top = 8.dp, start = 24.dp)) {
+                HorizontalDivider(modifier = Modifier.padding(bottom = 8.dp), thickness = 0.5.dp)
+
+                Row(modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = book.description ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start,
+                        modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    )
+
+                    TextButton(
+                        onClick = { onEditClicked(book) },
+                        contentPadding = PaddingValues(horizontal = 8.dp)
+                    ) {
+                        Icon(Icons.Default.Edit,
+                            null,
+                            modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Edit")
+                    }
+
+                    Spacer(Modifier.width(8.dp))
+
+                    TextButton(
+                        onClick = { onDeleteClicked(book) },
+                        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                    ) {
+                        Icon(Icons.Default.Delete, null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("Delete")
+                    }
+                }
+
+
+                Row {
+                    Text(
+                        text = "LOCATION:  ",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = book.filePath,
+                        style = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+            }
+        }
+    }
+}
