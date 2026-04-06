@@ -1,17 +1,5 @@
 package org.elsoft.bkdb
 
-//import androidx.compose.runtime.CompositionLocalProvider
-//import androidx.compose.runtime.staticCompositionLocalOf
-//import androidx.compose.ui.Alignment
-//import androidx.compose.ui.window.Window
-//import androidx.compose.ui.unit.DpSize
-//import androidx.compose.ui.unit.dp
-//import androidx.compose.ui.window.*
-//import org.elsoft.bkdb.ui.EBookApp
-//import java.awt.GraphicsEnvironment
-//import java.io.File
-//import java.util.Properties
-
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -34,6 +22,10 @@ import java.util.prefs.Preferences
 import org.elsoft.bkdb.utils.appSettings
 import org.elsoft.bkdb.viewmodel.BookViewModel
 import org.elsoft.bkdb.viewmodel.LocalBookViewModel
+
+import org.jetbrains.compose.resources.painterResource
+import kmp_library.composeapp.generated.resources.Res
+import kmp_library.composeapp.generated.resources.books
 
 // 1. Create a simple owner for the Desktop window
 class DesktopViewModelStoreOwner : ViewModelStoreOwner {
@@ -77,6 +69,7 @@ fun main() {
             position = WindowPosition(lastX.dp, lastY.dp),
             size = DpSize(lastWidth.dp, lastHeight.dp)
         )
+        val iconPainter = painterResource(Res.drawable.books)
 
         RepositoryProvider.repository = repo
 
@@ -90,7 +83,8 @@ fun main() {
                 exitApplication()
             },
             state = windowState,
-            title = "EBook Library Browser"
+            title = "EBook Library Browser",
+            icon = iconPainter,
         ) {
             // 1. Provide the StoreOwner (The "House" for the VM)
             CompositionLocalProvider(LocalViewModelStoreOwner provides viewModelStoreOwner) {
