@@ -13,8 +13,12 @@ package org.elsoft.bkdb
 //import java.util.Properties
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
@@ -22,8 +26,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.russhwolf.settings.PreferencesSettings
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
-import kotlinx.serialization.json.Json
 import org.elsoft.bkdb.repository.JsonBookRepository
 import org.elsoft.bkdb.repository.RepositoryProvider
 import org.elsoft.bkdb.ui.EBookApp
@@ -39,18 +41,24 @@ class DesktopViewModelStoreOwner : ViewModelStoreOwner {
 }
 
 val viewModelStoreOwner = DesktopViewModelStoreOwner()
-val bookDBPath = "/Apps/EBookLibBrowser/books.json"
-val catDBPath = "/Apps/EBookLibBrowser/cats.json"
+const val bookDBPath = "/Apps/EBookLibBrowser/books.json"
+const val catDBPath = "/Apps/EBookLibBrowser/cats.json"
 
-fun main() = application {
-    // Initialize settings immediately for Desktop
-    val delegate = Preferences.userRoot().node("org.elsoft.bkdb")
-    appSettings = PreferencesSettings(delegate)
+fun main() {
+    // 1. Grab your existing preferences delegate
+    val prefs = Preferences.userRoot().node("org.elsoft.bkdb")
+    appSettings = PreferencesSettings(prefs)
+
+    // 2. Load last known values (with sensible defaults)
+    val lastX = prefs.getInt("window_x", 100)
+    val lastY = prefs.getInt("window_y", 100)
+    val lastWidth = prefs.getInt("window_width", 1200)
+    val lastHeight = prefs.getInt("window_height", 800)
 
     val repo = runBlocking(Dispatchers.IO) {
         val books = DropboxService.downloadToString(bookDBPath)
         val cats = DropboxService.downloadToString(catDBPath)
-        val repo = JsonBookRepository(
+        val r = JsonBookRepository(
             ebookJsonString = books,
             catJsonString = cats,
             onSaveBooks = { newContent ->
@@ -60,38 +68,43 @@ fun main() = application {
                 DropboxService.uploadFile(catDBPath, newContent)
             }
         )
-        repo.initialize()
-        repo
+        r.initialize()
+        r
     }
 
-    // RepositoryProvider.repository = JdbcBookRepository()
-    RepositoryProvider.repository = repo
+    application {
+        val windowState = rememberWindowState(
+            position = WindowPosition(lastX.dp, lastY.dp),
+            size = DpSize(lastWidth.dp, lastHeight.dp)
+        )
 
-    Window(onCloseRequest = ::exitApplication) {
-        // 1. Provide the StoreOwner (The "House" for the VM)
-        CompositionLocalProvider(LocalViewModelStoreOwner provides viewModelStoreOwner) {
+        RepositoryProvider.repository = repo
 
-            // 2. Initialize the VM ONLY ONCE here using the factory
-            val vm: BookViewModel = viewModel {
-                BookViewModel(RepositoryProvider.repository)
-            }
+        Window(
+            onCloseRequest = {
+                prefs.putInt("window_x", windowState.position.x.value.toInt())
+                prefs.putInt("window_y", windowState.position.y.value.toInt())
+                prefs.putInt("window_width", windowState.size.width.value.toInt())
+                prefs.putInt("window_height", windowState.size.height.value.toInt())
 
-            // 3. Pass THAT instance into your custom Local provider
-            CompositionLocalProvider(LocalBookViewModel provides vm) {
-                EBookApp()
+                exitApplication()
+            },
+            state = windowState,
+            title = "EBook Library Browser"
+        ) {
+            // 1. Provide the StoreOwner (The "House" for the VM)
+            CompositionLocalProvider(LocalViewModelStoreOwner provides viewModelStoreOwner) {
+
+                // 2. Initialize the VM ONLY ONCE here using the factory
+                val vm: BookViewModel = viewModel {
+                    BookViewModel(RepositoryProvider.repository)
+                }
+
+                // 3. Pass THAT instance into your custom Local provider
+                CompositionLocalProvider(LocalBookViewModel provides vm) {
+                    EBookApp()
+                }
             }
         }
     }
 }
-
-//private fun saveWindowProperties(props: Properties, file: File, state: WindowState) {
-//    props.setProperty("width", state.size.width.value.toInt().toString())
-//    props.setProperty("height", state.size.height.value.toInt().toString())
-//
-//    val pos = state.position
-//    if (pos is WindowPosition.Absolute) {
-//        props.setProperty("x", pos.x.value.toInt().toString())
-//        props.setProperty("y", pos.y.value.toInt().toString())
-//    }
-//    file.outputStream().use { props.store(it, null) }
-//}

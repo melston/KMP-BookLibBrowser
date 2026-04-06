@@ -205,16 +205,23 @@ fun MainScreen() {
                 is LibraryUiState.Editing -> {
                     BookEditDialog(
                         book = uiState.book,
-                        onDismiss = { vm.resetUiState() },
+                        onDismiss = {
+                            vm.cancelEditing()
+                            vm.resetUiState()
+                        },
                         onSave = { title, author, desc ->
                             vm.updateBookMetadata(uiState.book, title, author, desc)
+                            vm.cancelEditing()
                             vm.resetUiState()
                         }
                     )
                 }
                 is LibraryUiState.ConfirmDelete -> {
                     AlertDialog(
-                        onDismissRequest = { vm.resetUiState() },
+                        onDismissRequest = {
+                            vm.cancelDeleteConfirmation()
+                            vm.resetUiState()
+                        },
                         title = { Text("Delete Book?") },
                         text = {
                             Column {

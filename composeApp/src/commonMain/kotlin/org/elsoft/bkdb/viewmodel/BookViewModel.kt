@@ -47,12 +47,12 @@ class BookViewModel(private val repository: BookRepository) : ViewModel() {
     var allBooks by mutableStateOf<List<EBook>>(emptyList())
         private set // Only the ViewModel can change the list
 
-    // 1. Derived Author List (Sorted Alphabetically)
-    val authors by derivedStateOf {
-        allBooks.map { it.author }
-            .distinct()
-            .sortedBy { it.lowercase() }
-    }
+//    // 1. Derived Author List (Sorted Alphabetically)
+//    val authors by derivedStateOf {
+//        allBooks.map { it.author }
+//            .distinct()
+//            .sortedBy { it.lowercase() }
+//    }
 
     // 1. The Filtered List (Replaces the combine {...}.stateIn block)
     val filteredBooks by derivedStateOf {
@@ -100,6 +100,8 @@ class BookViewModel(private val repository: BookRepository) : ViewModel() {
             repository.getBooksFlow().collect { newList ->
                 allBooks = newList
             }
+        }
+        viewModelScope.launch {
             repository.getCategoriesFlow().collect { newList ->
                 categories = newList
             }
