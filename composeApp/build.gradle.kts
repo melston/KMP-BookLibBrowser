@@ -17,15 +17,29 @@ kotlin {
     jvmToolchain(17)
 
     androidTarget { publishLibraryVariants("release") }
-    jvm {
-        mainRun {
-            mainClass.set("org.elsoft.bkdb.MainKt")
-        }
-    }
-//    linuxX64()
-//    mingwX64()
+
+    jvm("desktop")
 
     sourceSets {
+
+        val desktopMain by getting {
+            dependencies {
+                implementation(compose.desktop.currentOs)
+                implementation(compose.desktop.currentOs) // This downloads the .dll files for Windows
+
+                implementation(libs.kotlinx.coroutines.swing)
+                //implementation(libs.ktor.client.okhttp)
+                implementation(libs.ok.http3)
+                implementation(libs.sqlDelight.driver.sqlite)
+                implementation(libs.multiplatformSettings)
+
+                // Add this line to provide the "suitable driver"
+                implementation("com.mysql:mysql-connector-j:8.3.0")
+
+                // Optional: Add this to fix the SLF4J warning in your logs
+                implementation("org.slf4j:slf4j-simple:2.0.9")
+            }
+        }
 
         val commonMain by getting {
             dependencies {
@@ -51,7 +65,7 @@ kotlin {
                 implementation(libs.ok.http3)
 
                 implementation(libs.google.code.gson)
-                implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+                implementation(libs.jetbrains.androidx.lifecycle.viewmodel.compose)
 
             }
         }
@@ -76,24 +90,6 @@ kotlin {
             }
         }
 
-        val jvmMain by getting {
-            dependencies {
-                implementation(compose.desktop.currentOs) // This downloads the .dll files for Windows
-
-                implementation(libs.kotlinx.coroutines.swing)
-                //implementation(libs.ktor.client.okhttp)
-                implementation(libs.ok.http3)
-                implementation(libs.sqlDelight.driver.sqlite)
-                implementation(libs.multiplatformSettings)
-
-                // Add this line to provide the "suitable driver"
-                implementation("com.mysql:mysql-connector-j:8.3.0")
-
-                // Optional: Add this to fix the SLF4J warning in your logs
-                implementation("org.slf4j:slf4j-simple:2.0.9")
-            }
-        }
-
 //        linuxMain.dependencies {
 //            implementation(libs.ktor.client.curl)
 //            implementation(libs.sqlDelight.driver.native)
@@ -114,6 +110,27 @@ kotlin {
         }
     }
 
+}
+
+compose.desktop {
+    application {
+        mainClass = "org.elsoft.bkdb.MainKt"
+        from(kotlin.targets.getByName("desktop"))
+
+        nativeDistributions {
+            includeAllModules = true
+
+            targetFormats(org.jetbrains.compose.desktop.application.dsl.TargetFormat.Msi, org.jetbrains.compose.desktop.application.dsl.TargetFormat.Deb)
+            packageName = "EBookLibrary"
+            packageVersion = "1.0.0"
+
+            windows {
+                menu = true
+                shortcut = true
+                // iconFile.set(project.file("commonMain/composeResources/drawable/books.ico"))
+            }
+        }
+    }
 }
 
 android {
