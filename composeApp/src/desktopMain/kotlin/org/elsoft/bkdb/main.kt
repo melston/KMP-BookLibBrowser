@@ -25,7 +25,7 @@ import org.elsoft.bkdb.viewmodel.LocalBookViewModel
 
 import org.jetbrains.compose.resources.painterResource
 import kmp_library.composeapp.generated.resources.Res
-import kmp_library.composeapp.generated.resources.books
+import kmp_library.composeapp.generated.resources.ic_books
 
 // 1. Create a simple owner for the Desktop window
 class DesktopViewModelStoreOwner : ViewModelStoreOwner {
@@ -70,7 +70,7 @@ fun main() {
                 position = WindowPosition(lastX.dp, lastY.dp),
                 size = DpSize(lastWidth.dp, lastHeight.dp)
             )
-            val iconPainter = painterResource(Res.drawable.books)
+            val iconPainter = painterResource(Res.drawable.ic_books)
 
             RepositoryProvider.repository = repo
 

@@ -1,17 +1,11 @@
 package org.elsoft.bkdb.ui
 
-import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.defaultScrollbarStyle
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,18 +48,11 @@ fun TitleListView() {
             }
         }
 
-        // 3. Add the VerticalScrollbar
-        VerticalScrollbar(
+        ListScrollbar(
+            state = state,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .fillMaxHeight(),
-            adapter = rememberScrollbarAdapter(scrollState = state),
-            style = defaultScrollbarStyle().copy(
-                unhoverColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                hoverColor = MaterialTheme.colorScheme.primary,
-                thickness = 10.dp,
-                shape = RoundedCornerShape(4.dp)
-            )
+                .fillMaxHeight()
         )
 
         // The Floating Action Button

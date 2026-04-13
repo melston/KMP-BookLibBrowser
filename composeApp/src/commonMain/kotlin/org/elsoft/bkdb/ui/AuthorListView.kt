@@ -4,9 +4,7 @@ import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
@@ -25,7 +23,7 @@ fun AuthorListView() {
     val vm = LocalBookViewModel.current
     // Track which authors are expanded
     val expandedAuthors = remember { mutableStateMapOf<String, Boolean>() }
-    val state = vm.authorListState
+    val listState = vm.authorListState
     val scope = rememberCoroutineScope()
     val groupedBooks = vm.booksByAuthor
 
@@ -39,14 +37,14 @@ fun AuthorListView() {
 
     val showButton by remember {
         derivedStateOf {
-            state.firstVisibleItemIndex > 0
+            listState.firstVisibleItemIndex > 0
         }
     }
 
     Row(modifier = Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f)) {
             LazyColumn(
-                state = state,
+                state = listState,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(end = 12.dp)
@@ -113,23 +111,15 @@ fun AuthorListView() {
                 }
             }
 
-            VerticalScrollbar(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .fillMaxHeight(),
-                adapter = rememberScrollbarAdapter(scrollState = state),
-                style = defaultScrollbarStyle().copy(
-                    unhoverColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
-                    hoverColor = MaterialTheme.colorScheme.primary,
-                    thickness = 10.dp,
-                    shape = RoundedCornerShape(4.dp)
-                )
+            ListScrollbar(
+                state = listState,
+                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight()
             )
 
             // The Floating Action Button
             ScrollToTopButton(
                 visible = showButton,
-                onClick = { scope.launch { state.animateScrollToItem(0) } },
+                onClick = { scope.launch { listState.animateScrollToItem(0) } },
                 modifier = Modifier.align(Alignment.BottomEnd).padding(32.dp)
             )
         }
@@ -160,7 +150,7 @@ fun AuthorListView() {
                             val targetIndex = findIndexForLetter(groupedBooks, letter)
                             if (targetIndex != -1) {
                                 scope.launch {
-                                    state.animateScrollToItem(targetIndex)
+                                    listState.animateScrollToItem(targetIndex)
                                 }
                             }
                         }

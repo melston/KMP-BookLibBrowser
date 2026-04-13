@@ -1,24 +1,52 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import java.util.Properties
+import com.codingfeline.buildkonfig.compiler.FieldSpec.Type.STRING
 
 plugins {
     alias(libs.plugins.multiplatform)
-    alias(libs.plugins.android.library)
+    alias(libs.plugins.android.application)
     alias(libs.plugins.maven.publish)
     alias(libs.plugins.compose)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.sqlDelight)
     alias(libs.plugins.buildConfig)
+    alias(libs.plugins.buildkonfig)
+}
+
+buildkonfig {
+    packageName = "org.elsoft.bkdb"
+
+    // Read from local.properties
+    val properties = Properties()
+    val propertiesFile = rootProject.file("local.properties")
+    if (propertiesFile.exists()) {
+        properties.load(propertiesFile.inputStream())
+    }
+
+    defaultConfigs {
+        buildConfigField(STRING, "DROPBOX_APP_KEY", properties.getProperty("dropbox.app_key") ?: "")
+        buildConfigField(STRING, "DROPBOX_APP_SECRET", properties.getProperty("dropbox.app_secret") ?: "")
+        buildConfigField(STRING, "DROPBOX_REFRESH_TOKEN", properties.getProperty("dropbox.refresh_token") ?: "")
+    }
 }
 
 kotlin {
     jvmToolchain(17)
 
-    androidTarget { publishLibraryVariants("release") }
+    androidTarget()
 
     jvm("desktop")
+
+    compilerOptions {
+        // This stops the "Incompatible classes" errors
+        freeCompilerArgs.add("-Xskip-metadata-version-check")
+
+        // Ensure this matches your project's main Kotlin version (2.0.21)
+        languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0)
+    }
 
     sourceSets {
 
@@ -78,6 +106,7 @@ kotlin {
 
         val androidMain by getting {
             dependencies {
+                implementation(libs.dropbox)
                 implementation(libs.androidx.activityCompose) // This is the big one
                 implementation(libs.kotlinx.coroutines.android)
                 //implementation(libs.ktor.client.okhttp)
@@ -92,11 +121,6 @@ kotlin {
 
 //        linuxMain.dependencies {
 //            implementation(libs.ktor.client.curl)
-//            implementation(libs.sqlDelight.driver.native)
-//        }
-//
-//        mingwMain.dependencies {
-//            implementation(libs.ktor.client.winhttp)
 //            implementation(libs.sqlDelight.driver.native)
 //        }
     }
@@ -136,9 +160,20 @@ compose.desktop {
 android {
     namespace = "org.elsoft.bkdb"
     compileSdk = 35
+    buildToolsVersion = "35.0.0"
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 
     defaultConfig {
-        minSdk = 21
+        // Use the function-style calls
+        applicationId = "org.elsoft.bkdb"
+        minSdk = 24
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
     }
 }
 

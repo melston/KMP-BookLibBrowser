@@ -2,12 +2,9 @@ package org.elsoft.bkdb.ui
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.*
-import androidx.lifecycle.viewmodel.compose.viewModel
-import org.elsoft.bkdb.repository.RepositoryProvider
 import org.elsoft.bkdb.utils.ConfigManager
 import org.elsoft.bkdb.viewmodel.BookViewModel
 import org.elsoft.bkdb.viewmodel.LocalBookViewModel
-import org.jetbrains.skiko.MainUIDispatcher
 
 @Composable
 fun EBookApp() {

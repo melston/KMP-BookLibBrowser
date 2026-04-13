@@ -7,4 +7,18 @@ plugins {
     alias(libs.plugins.kotlinx.serialization).apply(false)
     alias(libs.plugins.buildConfig).apply(false)
     alias(libs.plugins.android.application).apply(false)
+    alias(libs.plugins.buildkonfig) apply false
+}
+
+buildscript {
+    configurations.all {
+        resolutionStrategy {
+            eachDependency {
+                if (requested.group == "org.jetbrains.kotlin") {
+                    // Force everything on the classpath to use your project's Kotlin version
+                    useVersion("2.0.21")
+                }
+            }
+        }
+    }
 }
