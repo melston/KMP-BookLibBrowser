@@ -160,15 +160,15 @@ class BookViewModel(private val repository: BookRepository) : ViewModel() {
         }
     }
 
-    fun setBookRead(book: EBook, isRead: Boolean) {
+    fun toggleBookRead(book: EBook) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.updateReadStatus(book.id, isRead)
+            repository.updateReadStatus(book.id, !book.isRead)
         }
     }
 
-    fun setBookFavorite(book: EBook, isFavorite: Boolean) {
+    fun toggleBookFavorite(book: EBook) {
         viewModelScope.launch(Dispatchers.IO) {
-            repository.updateFavoriteStatus(book.id, isFavorite)
+            repository.updateFavoriteStatus(book.id, !book.isFavorite)
         }
     }
 

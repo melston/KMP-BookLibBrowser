@@ -101,8 +101,8 @@ fun AuthorListView() {
                                     book,
                                     onEditClicked = { vm.startEditing(book) },
                                     onDeleteClicked = {vm.bookToDelete = book },
-                                    onToggleRead = { book -> vm.setBookRead(book, !book.isRead) },
-                                    onToggleFavorite = { book -> vm.setBookFavorite(book, !book.isRead) },
+                                    onToggleRead = { book -> vm.toggleBookRead(book) },
+                                    onToggleFavorite = { book -> vm.toggleBookFavorite(book) },
                                     onOpenBook = { book -> vm.openBook(book) },
                                 )
                             }
