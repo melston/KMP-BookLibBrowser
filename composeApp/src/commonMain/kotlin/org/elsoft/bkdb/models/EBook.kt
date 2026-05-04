@@ -55,6 +55,8 @@ object EBooks {
 
         // 1. Shorten only the base name (remove a-z and _)
         val shortenedBase = baseName
+            .replace("&", "A")
+            .replace("!", "")
             .replace(Regex("[a-z_]"), "")
             .replace(" ", "")
 
