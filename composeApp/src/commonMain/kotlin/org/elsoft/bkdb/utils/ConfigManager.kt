@@ -40,7 +40,7 @@ object ConfigManager {
 
     fun isConfigured(): Boolean {
         // If the migration worked, these won't be empty anymore!
-        return dbUrl.isNotEmpty()
+        return ! (dbUrl.isEmpty() && dropboxAppKey.isEmpty())
     }
 
     fun initializeFromProperties(props: Properties) {
