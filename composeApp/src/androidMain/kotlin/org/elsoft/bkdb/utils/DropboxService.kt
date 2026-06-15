@@ -23,31 +23,42 @@ actual object DropboxService {
     private val cacheDir = File(PlatformUtils.getCacheDir())
     private val httpClient = OkHttpClient()
     private val gson = GsonBuilder().setPrettyPrinting().create()
-    private val client: DbxClientV2 by lazy {
-        val config = DbxRequestConfig.newBuilder("elsoft.EBookLib").build()
 
-        // Use the credential constructor instead of a simple string
-        val credential = DbxCredential(
-            "", // Access token (can be empty, it will auto-refresh)
-            -1L, // Expires in (auto-handled)
-            ConfigManager.dropboxRefreshToken,
-            ConfigManager.dropboxAppKey,
-            ConfigManager.dropboxAppSecret
-        )
+    private var cachedClient: DbxClientV2? = null
+    private var cachedAppKey = ""
+    private var cachedRefreshToken = ""
 
-        // Create the client
-        val clientV2 = DbxClientV2(config, credential)
+    private val client: DbxClientV2
+        get() {
+            val appKey = ConfigManager.dropboxAppKey
+            val refreshToken = ConfigManager.dropboxRefreshToken
+            val currentClient = cachedClient
+            if (currentClient != null && appKey == cachedAppKey && refreshToken == cachedRefreshToken) {
+                return currentClient
+            }
 
-        // MANDATORY: Force a refresh if the token is currently empty
-        // This populates the internal 'Bearer' header correctly.
-        try {
-            credential.refresh(config)
-        } catch (e: Exception) {
-            println("Initial Dropbox token refresh failed: ${e.message}")
+            val config = DbxRequestConfig.newBuilder("elsoft.EBookLib").build()
+            val credential = DbxCredential(
+                "", // Access token (can be empty, it will auto-refresh)
+                -1L, // Expires in (auto-handled)
+                refreshToken,
+                appKey,
+                ConfigManager.dropboxAppSecret
+            )
+
+            val newClient = DbxClientV2(config, credential)
+
+            try {
+                credential.refresh(config)
+            } catch (e: Exception) {
+                println("Initial Dropbox token refresh failed: ${e.message}")
+            }
+
+            cachedClient = newClient
+            cachedAppKey = appKey
+            cachedRefreshToken = refreshToken
+            return newClient
         }
-
-        clientV2
-    }
 
     init {
         if (!cacheDir.exists()) cacheDir.mkdirs()
@@ -172,4 +183,7 @@ actual object DropboxService {
         }
     }
 
+    actual suspend fun checkConnection(): Boolean = withContext(Dispatchers.IO) {
+        getFreshAccessToken() != null
+    }
 }

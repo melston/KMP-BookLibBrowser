@@ -77,11 +77,15 @@ class JdbcBookRepository : BookRepository {
     override suspend fun getCategoriesFlow(): Flow<List<Category>> = _categories.asStateFlow()
 
     override suspend fun isAvailable(): Boolean {
-        return testConnection(
+        val success = testConnection(
             ConfigManager.dbUrl,
             ConfigManager.dbUser,
             ConfigManager.dbPassword
         )
+        if (success) {
+            initialize()
+        }
+        return success
     }
 
     fun initialize() {

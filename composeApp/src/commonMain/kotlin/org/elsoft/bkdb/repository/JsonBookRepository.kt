@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import org.elsoft.bkdb.models.Category
 import org.elsoft.bkdb.models.EBook
+import org.elsoft.bkdb.utils.DropboxService
 
 class JsonBookRepository(
     private val ebookJsonString: String,
@@ -52,15 +53,28 @@ class JsonBookRepository(
     }
 
     suspend fun initialize() = withContext(Dispatchers.Default) {
-        _books.value = json.decodeFromString(ebookJsonString)
-        _categories.value = json.decodeFromString(catJsonString)
+        _books.value = if (ebookJsonString.isBlank()) emptyList() else json.decodeFromString(ebookJsonString)
+        _categories.value = if (catJsonString.isBlank()) emptyList() else json.decodeFromString(catJsonString)
     }
 
     override suspend fun getBooksFlow(): Flow<List<EBook>> = _books.asStateFlow()
     override suspend fun getCategoriesFlow(): Flow<List<Category>> = _categories.asStateFlow()
 
     override suspend fun isAvailable(): Boolean {
-        return _books.value.isNotEmpty()
+        return try {
+            if (DropboxService.checkConnection()) {
+                val booksJson = DropboxService.downloadToString("/Apps/EBookLibBrowser/books.json")
+                val catsJson = DropboxService.downloadToString("/Apps/EBookLibBrowser/cats.json")
+                _books.value = if (booksJson.isBlank()) emptyList() else json.decodeFromString(booksJson)
+                _categories.value = if (catsJson.isBlank()) emptyList() else json.decodeFromString(catsJson)
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
     }
 
     override suspend fun updateReadStatus(bookId: Int, isRead: Boolean): Result<Unit> {

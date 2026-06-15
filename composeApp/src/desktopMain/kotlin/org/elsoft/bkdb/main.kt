@@ -20,6 +20,7 @@ import org.elsoft.bkdb.ui.EBookApp
 import org.elsoft.bkdb.utils.DropboxService
 import java.util.prefs.Preferences
 import org.elsoft.bkdb.utils.appSettings
+import org.elsoft.bkdb.utils.ConfigManager
 import org.elsoft.bkdb.viewmodel.BookViewModel
 import org.elsoft.bkdb.viewmodel.LocalBookViewModel
 
@@ -49,8 +50,9 @@ fun main() {
         val lastHeight = prefs.getInt("window_height", 800)
 
         val repo = runBlocking(Dispatchers.IO) {
-            val books = DropboxService.downloadToString(bookDBPath)
-            val cats = DropboxService.downloadToString(catDBPath)
+            val isConfigured = ConfigManager.isConfigured()
+            val books = if (isConfigured) DropboxService.downloadToString(bookDBPath) else ""
+            val cats = if (isConfigured) DropboxService.downloadToString(catDBPath) else ""
             val r = JsonBookRepository(
                 ebookJsonString = books,
                 catJsonString = cats,

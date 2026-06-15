@@ -56,18 +56,23 @@ class MainActivity : ComponentActivity() {
             Log.d("BKDB_DEBUG", "Key in Config: ${ConfigManager.dropboxAppKey.take(5)}...")
 
             // 1. Initialize the repo (identical to your Desktop logic)
-            val books = DropboxService.downloadToString(bookDBPath)
+            val isConfigured = ConfigManager.isConfigured()
+            val books = if (isConfigured) DropboxService.downloadToString(bookDBPath) else ""
 
-            Log.e("BKDB_NET", "Downloaded ${books.length} characters from $bookDBPath")
-            if (books.isEmpty()) {
-                Log.e("BKDB_NET", "WARNING: Downloaded string is EMPTY for path: $bookDBPath")
+            if (isConfigured) {
+                Log.e("BKDB_NET", "Downloaded ${books.length} characters from $bookDBPath")
+                if (books.isEmpty()) {
+                    Log.e("BKDB_NET", "WARNING: Downloaded string is EMPTY for path: $bookDBPath")
+                }
             }
 
-            val cats = DropboxService.downloadToString(catDBPath)
+            val cats = if (isConfigured) DropboxService.downloadToString(catDBPath) else ""
 
-            Log.e("BKDB_NET", "Downloaded ${cats.length} characters from $catDBPath")
-            if (cats.isEmpty()) {
-                Log.e("BKDB_NET", "WARNING: Downloaded string is EMPTY for path: $catDBPath")
+            if (isConfigured) {
+                Log.e("BKDB_NET", "Downloaded ${cats.length} characters from $catDBPath")
+                if (cats.isEmpty()) {
+                    Log.e("BKDB_NET", "WARNING: Downloaded string is EMPTY for path: $catDBPath")
+                }
             }
 
             val repo = JsonBookRepository(

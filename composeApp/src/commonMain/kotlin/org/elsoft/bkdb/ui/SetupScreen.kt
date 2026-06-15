@@ -125,24 +125,47 @@ fun SetupScreen(onConfigSaved: () -> Unit) {
                     onClick = {
                         scope.launch {
                             isTesting = true
+
+                            // Store old config values to revert on failure
+                            val oldDbUrl = ConfigManager.dbUrl
+                            val oldDbUser = ConfigManager.dbUser
+                            val oldDbPass = ConfigManager.dbPassword
+                            val oldDropboxAppKey = ConfigManager.dropboxAppKey
+                            val oldDropboxAppSecret = ConfigManager.dropboxAppSecret
+                            val oldDropboxRefreshToken = ConfigManager.dropboxRefreshToken
+                            val oldDropboxRoot = ConfigManager.dropboxRoot
+                            val oldViewerCommand = ConfigManager.viewerCommand
+
+                            // Set new config values
+                            ConfigManager.dbUrl = dbUrl
+                            ConfigManager.dbUser = dbUser
+                            ConfigManager.dbPassword = dbPass
+                            ConfigManager.viewerCommand = viewerCommand
+                            ConfigManager.dropboxAppKey = dropboxAppKey
+                            ConfigManager.dropboxAppSecret = dropboxAppSecret
+                            ConfigManager.dropboxRefreshToken = dropboxRefreshToken
+                            ConfigManager.dropboxRoot = dropboxRoot
+
                             val success = withContext(Dispatchers.IO) {
                                 repository.isAvailable()
                             }
 
                             if (success) {
-                                ConfigManager.dbUser = dbUser
-                                ConfigManager.dbUrl = dbUrl
-                                ConfigManager.dbPassword = dbPass
-                                ConfigManager.viewerCommand = viewerCommand
-                                ConfigManager.dropboxAppKey = dropboxAppKey
-                                ConfigManager.dropboxAppSecret = dropboxAppSecret
-                                ConfigManager.dropboxRefreshToken = dropboxRefreshToken
-                                ConfigManager.dropboxRoot = dropboxRoot
                                 onConfigSaved()
                             } else {
+                                // Revert to old config on failure
+                                ConfigManager.dbUrl = oldDbUrl
+                                ConfigManager.dbUser = oldDbUser
+                                ConfigManager.dbPassword = oldDbPass
+                                ConfigManager.viewerCommand = oldViewerCommand
+                                ConfigManager.dropboxAppKey = oldDropboxAppKey
+                                ConfigManager.dropboxAppSecret = oldDropboxAppSecret
+                                ConfigManager.dropboxRefreshToken = oldDropboxRefreshToken
+                                ConfigManager.dropboxRoot = oldDropboxRoot
+
                                 isTesting = false
                                 snackbarHostState.showSnackbar(
-                                    message = "Connection failed. Check your URL, user, or password.",
+                                    message = "Connection failed. Check your settings.",
                                     duration = SnackbarDuration.Short
                                 )
                             }

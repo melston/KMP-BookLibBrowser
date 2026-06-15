@@ -34,4 +34,9 @@ expect object DropboxService {
      * Delete the file on the Dropbox server
      */
     suspend fun delete(remotePath: String): Result<Unit>
+
+    /**
+     * Checks if we can successfully obtain an access token from Dropbox with current credentials.
+     */
+    suspend fun checkConnection(): Boolean
 }
