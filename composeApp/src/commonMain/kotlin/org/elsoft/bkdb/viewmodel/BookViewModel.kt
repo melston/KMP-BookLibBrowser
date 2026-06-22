@@ -15,9 +15,14 @@ import org.elsoft.bkdb.models.Category
 import org.elsoft.bkdb.models.EBook
 import org.elsoft.bkdb.models.EBooks
 import org.elsoft.bkdb.models.LibraryUiState
+import org.elsoft.bkdb.models.PendingBookImport
 import org.elsoft.bkdb.repository.BookRepository
 import org.elsoft.bkdb.repository.JsonBookRepository
 import org.elsoft.bkdb.ui.ReadFilter
+import org.elsoft.bkdb.utils.FilenamePattern
+import org.elsoft.bkdb.utils.FilenameParser
+import org.elsoft.bkdb.utils.DropboxService
+import org.elsoft.bkdb.utils.ConfigManager
 
 class BookViewModel(private val repository: BookRepository) : ViewModel() {
     private val _uiEvents = Channel<String>(Channel.BUFFERED)
@@ -42,6 +47,13 @@ class BookViewModel(private val repository: BookRepository) : ViewModel() {
         private set
 
     var selectedCategory by mutableStateOf<Category?>(null)
+
+    var syncScanDirectory by mutableStateOf("")
+    var syncFilenamePattern by mutableStateOf(FilenamePattern.AUTHOR_DASH_TITLE)
+
+    var pendingImports by mutableStateOf<List<PendingBookImport>>(emptyList())
+    var deletedBooks by mutableStateOf<List<EBook>>(emptyList())
+    var approvedDeletions by mutableStateOf<Set<Int>>(emptySet())
 
     // Using 'by' makes this look like a regular List to the rest of the app
     var allBooks by mutableStateOf<List<EBook>>(emptyList())
@@ -187,6 +199,133 @@ class BookViewModel(private val repository: BookRepository) : ViewModel() {
             result.onFailure { error ->
                 _uiEvents.send("Error opening book: ${error.message}")
             }
+        }
+    }
+
+    fun startSyncConfiguration() {
+        syncScanDirectory = ConfigManager.dropboxCloudScanPath
+        syncFilenamePattern = FilenamePattern.AUTHOR_DASH_TITLE
+        uiState = LibraryUiState.ConfigureSync
+    }
+
+    fun startSyncScan() {
+        ConfigManager.dropboxCloudScanPath = syncScanDirectory
+        uiState = LibraryUiState.ScanningDropbox
+        viewModelScope.launch(Dispatchers.Default) {
+            val dropboxFiles = DropboxService.listSourceFiles(syncScanDirectory, listOf(".epub", ".pdf"))
+            
+            // Format files to match books.json filePath (which is e.g. "dropbox:/path/to/book.epub")
+            val indexedPaths = allBooks.map { it.filePath }
+            
+            val newFilePaths = dropboxFiles.filter { file ->
+                val formattedPath = "dropbox:$file"
+                formattedPath !in indexedPaths
+            }
+
+            val matchedFiles = dropboxFiles.map { "dropbox:$it" }.toSet()
+            
+            val scanDirPrefix = if (syncScanDirectory.trim() == "/" || syncScanDirectory.isBlank()) {
+                "dropbox:"
+            } else {
+                val cleanedDir = if (syncScanDirectory.startsWith("/")) syncScanDirectory else "/$syncScanDirectory"
+                val dirWithTrailingSlash = if (cleanedDir.endsWith("/")) cleanedDir else "$cleanedDir/"
+                "dropbox:$dirWithTrailingSlash"
+            }
+
+            val deleted = allBooks.filter { book ->
+                book.filePath.startsWith("dropbox:") &&
+                book.filePath.startsWith(scanDirPrefix, ignoreCase = true) &&
+                book.filePath !in matchedFiles
+            }
+
+            val parsedImports = newFilePaths.map { filePath ->
+                val fileName = filePath.substringAfterLast("/")
+                val parsed = FilenameParser.parseFilename(fileName, syncFilenamePattern)
+                PendingBookImport(
+                    filePath = "dropbox:$filePath",
+                    defaultTitle = parsed.second,
+                    defaultAuthor = parsed.first,
+                    title = parsed.second,
+                    author = parsed.first,
+                    categoryId = 0,
+                    isFavorite = false,
+                    isRead = false,
+                    description = "",
+                    isApproved = false
+                )
+            }
+
+            pendingImports = parsedImports
+            deletedBooks = deleted
+            approvedDeletions = deleted.map { it.id }.toSet()
+
+            uiState = LibraryUiState.SyncWizard(pendingImports, deletedBooks)
+        }
+    }
+
+    fun updatePendingImport(index: Int, updated: PendingBookImport) {
+        pendingImports = pendingImports.toMutableList().apply {
+            this[index] = updated
+        }
+        val current = uiState
+        if (current is LibraryUiState.SyncWizard) {
+            uiState = current.copy(newFiles = pendingImports)
+        }
+    }
+
+    fun selectAllImports(approved: Boolean) {
+        pendingImports = pendingImports.map { it.copy(isApproved = approved) }
+        val current = uiState
+        if (current is LibraryUiState.SyncWizard) {
+            uiState = current.copy(newFiles = pendingImports)
+        }
+    }
+
+    fun toggleDeletedBookSelection(bookId: Int) {
+        approvedDeletions = if (bookId in approvedDeletions) {
+            approvedDeletions - bookId
+        } else {
+            approvedDeletions + bookId
+        }
+    }
+
+    fun commitSync() {
+        viewModelScope.launch(Dispatchers.Default) {
+            // 1. Process deletions
+            if (approvedDeletions.isNotEmpty()) {
+                repository.deleteBooks(approvedDeletions)
+            }
+
+            // 2. Process additions
+            val nextStartId = (allBooks.maxOfOrNull { it.id } ?: 0) + 1
+            var idCounter = nextStartId
+            val booksToInsert = pendingImports.filter { it.isApproved }.map { import ->
+                EBook(
+                    id = idCounter++,
+                    title = import.title,
+                    author = import.author,
+                    filePath = import.filePath,
+                    isRead = import.isRead,
+                    isFavorite = import.isFavorite,
+                    category = import.categoryId,
+                    description = import.description.ifBlank { null }
+                )
+            }
+
+            if (booksToInsert.isNotEmpty()) {
+                repository.addBooks(booksToInsert)
+            }
+
+            // 3. Clear states
+            pendingImports = emptyList()
+            deletedBooks = emptyList()
+            approvedDeletions = emptySet()
+
+            // 4. Force refresh of the book list
+            refreshBooks()
+            uiState = LibraryUiState.Idle
+
+            _uiEvents.send("Sync completed successfully.")
         }
     }
 }

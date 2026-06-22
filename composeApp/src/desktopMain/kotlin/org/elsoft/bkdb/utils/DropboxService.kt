@@ -179,4 +179,45 @@ actual object DropboxService {
     actual suspend fun checkConnection(): Boolean = withContext(Dispatchers.IO) {
         getFreshAccessToken() != null
     }
+
+    actual suspend fun listSourceFiles(directoryPath: String, extensions: List<String>): List<String> = withContext(Dispatchers.IO) {
+        try {
+            val path = if (directoryPath.trim() == "/" || directoryPath.isBlank()) "" else {
+                if (directoryPath.startsWith("/")) directoryPath else "/$directoryPath"
+            }
+            val files = mutableListOf<String>()
+            val listResult = client.files().listFolderBuilder(path).withRecursive(true).start()
+            var cursor = listResult.cursor
+            var hasMore = listResult.hasMore
+
+            for (entry in listResult.entries) {
+                if (entry is com.dropbox.core.v2.files.FileMetadata) {
+                    val lowerPath = entry.pathLower ?: continue
+                    val pathDisplay = entry.pathDisplay ?: continue
+                    if (extensions.any { lowerPath.endsWith(it.lowercase()) }) {
+                        files.add(pathDisplay)
+                    }
+                }
+            }
+
+            while (hasMore) {
+                val nextResult = client.files().listFolderContinue(cursor)
+                for (entry in nextResult.entries) {
+                    if (entry is com.dropbox.core.v2.files.FileMetadata) {
+                        val lowerPath = entry.pathLower ?: continue
+                        val pathDisplay = entry.pathDisplay ?: continue
+                        if (extensions.any { lowerPath.endsWith(it.lowercase()) }) {
+                            files.add(pathDisplay)
+                        }
+                    }
+                }
+                cursor = nextResult.cursor
+                hasMore = nextResult.hasMore
+            }
+            files
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
 }
