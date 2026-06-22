@@ -121,7 +121,16 @@ class JsonBookRepository(
 
     override suspend fun delete(bookId: Int): Result<Unit> {
         _books.value = _books.value.filter { it.id != bookId }
-        // TODO: Add real implementation
-        return Result.success(Unit)
+        return persistBooks()
+    }
+
+    override suspend fun addBooks(books: List<EBook>): Result<Unit> {
+        _books.value = _books.value + books
+        return persistBooks()
+    }
+
+    override suspend fun deleteBooks(bookIds: Set<Int>): Result<Unit> {
+        _books.value = _books.value.filter { it.id !in bookIds }
+        return persistBooks()
     }
 }

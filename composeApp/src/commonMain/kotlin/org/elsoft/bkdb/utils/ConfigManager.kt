@@ -38,6 +38,10 @@ object ConfigManager {
         get() = settings.getString("dropbox.root", "")
         set(value) = settings.putString("dropbox.root", value)
 
+    var dropboxCloudScanPath: String
+        get() = settings.getString("dropbox.cloud_scan_path", "/")
+        set(value) = settings.putString("dropbox.cloud_scan_path", value)
+
     fun isConfigured(): Boolean {
         // If the migration worked, these won't be empty anymore!
         return ! (dbUrl.isEmpty() && dropboxAppKey.isEmpty())

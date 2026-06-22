@@ -14,4 +14,6 @@ interface BookRepository {
     suspend fun updateAuthor(bookId: Int, authorName: String): Result<Unit>
     suspend fun updateDescription(bookId: Int, description: String?): Result<Unit>
     suspend fun delete(bookId: Int): Result<Unit>
+    suspend fun addBooks(books: List<EBook>): Result<Unit>
+    suspend fun deleteBooks(bookIds: Set<Int>): Result<Unit>
 }
