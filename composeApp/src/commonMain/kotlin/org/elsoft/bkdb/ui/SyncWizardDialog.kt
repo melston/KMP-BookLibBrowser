@@ -1,13 +1,11 @@
 package org.elsoft.bkdb.ui
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -19,18 +17,16 @@ import androidx.compose.ui.input.key.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import org.elsoft.bkdb.models.EBook
 import org.elsoft.bkdb.models.LibraryUiState
 import org.elsoft.bkdb.models.PendingBookImport
-import org.elsoft.bkdb.models.EBook
 import org.elsoft.bkdb.utils.FilenamePattern
 import org.elsoft.bkdb.viewmodel.LocalBookViewModel
 
 @Composable
 fun SyncWizardDialog() {
     val vm = LocalBookViewModel.current
-    val uiState = vm.uiState
-
-    when (uiState) {
+    when (val uiState = vm.uiState) {
         is LibraryUiState.ConfigureSync -> {
             AdaptiveDialog(
                 onCloseRequest = { vm.resetUiState() },
@@ -125,7 +121,7 @@ fun ConfigureSyncView(
                 label = { Text("Filename Parsing Format") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
                 modifier = Modifier
-                    .menuAnchor()
+                    .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             )
@@ -520,7 +516,7 @@ fun NewBookImportCard(
                             label = { Text("Category") },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryDropdownExpanded) },
                             modifier = Modifier
-                                .menuAnchor()
+                                .menuAnchor(MenuAnchorType.PrimaryNotEditable)
                                 .fillMaxWidth()
                                 .onKeyEvent { keyEvent ->
                                     if (keyEvent.type == KeyEventType.KeyDown) {
