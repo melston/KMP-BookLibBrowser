@@ -4,7 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -205,6 +205,9 @@ fun SyncWizardView(
     onApply: () -> Unit,
     onCancel: () -> Unit
 ) {
+    val sortedNewFiles = remember(newFiles) { newFiles.sortedBy { it.filePath } }
+    val sortedDeletedBooks = remember(deletedBooks) { deletedBooks.sortedBy { it.filePath } }
+
     val totalNew = newFiles.size
     val totalDeleted = deletedBooks.size
 
@@ -294,7 +297,7 @@ fun SyncWizardView(
                                         style = MaterialTheme.typography.bodySmall,
                                         modifier = Modifier.padding(vertical = 8.dp)
                                     )
-                                    deletedBooks.forEach { book ->
+                                    sortedDeletedBooks.forEach { book ->
                                         val isSelected = book.id in approvedDeletions
                                         Row(
                                             modifier = Modifier.fillMaxWidth(),
@@ -368,11 +371,15 @@ fun SyncWizardView(
                             }
                         }
 
-                        itemsIndexed(newFiles) { index, importItem ->
+                        items(sortedNewFiles, key = { it.filePath }) { importItem ->
                             NewBookImportCard(
                                 importItem = importItem,
-                                // Pass index to uniquely update item
-                                onUpdate = { updated -> onUpdateImport(index, updated) }
+                                onUpdate = { updated ->
+                                    val originalIndex = newFiles.indexOf(importItem)
+                                    if (originalIndex != -1) {
+                                        onUpdateImport(originalIndex, updated)
+                                    }
+                                }
                             )
                         }
                     }
