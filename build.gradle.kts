@@ -16,7 +16,7 @@ buildscript {
             eachDependency {
                 if (requested.group == "org.jetbrains.kotlin") {
                     // Force everything on the classpath to use your project's Kotlin version
-                    useVersion("2.0.21")
+                    useVersion("2.2.10")
                 }
             }
         }
