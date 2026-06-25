@@ -170,4 +170,12 @@ class JdbcBookRepository : BookRepository {
         val query = "DELETE FROM ${Consts.EBOOK_TBL} WHERE id = ${bookId}"
         return executeUpdate(query)
     }
+
+    override suspend fun addBooks(books: List<EBook>): Result<Unit> {
+        return Result.success(Unit)
+    }
+
+    override suspend fun deleteBooks(bookIds: Set<Int>): Result<Unit> {
+        return Result.success(Unit)
+    }
 }

@@ -39,4 +39,9 @@ expect object DropboxService {
      * Checks if we can successfully obtain an access token from Dropbox with current credentials.
      */
     suspend fun checkConnection(): Boolean
+
+    /**
+     * List all files recursively under the given directory path, matching the given extensions.
+     */
+    suspend fun listSourceFiles(directoryPath: String, extensions: List<String>): List<String>
 }

@@ -63,6 +63,13 @@ fun MainScreen() {
                                     )
                                 })
 
+                            // Sync Button with Tooltip
+                            ActionIconButton(
+                                onClick = { vm.startSyncConfiguration() },
+                                icon = Icons.Default.Sync,
+                                tooltipText = "Sync Dropbox Files"
+                            )
+
                             // Info Button with Tooltip
                             ActionIconButton(
                                 onClick = { showAboutDialog = true },
@@ -256,6 +263,11 @@ fun MainScreen() {
                         onClose = { vm.resetUiState() },
                         onDelete = { vm.startDeleteConfirmation(it) }
                     )
+                }
+                is LibraryUiState.ConfigureSync,
+                is LibraryUiState.ScanningDropbox,
+                is LibraryUiState.SyncWizard -> {
+                    SyncWizardDialog()
                 }
                 LibraryUiState.Idle -> { /* Nothing to show */ }
             }

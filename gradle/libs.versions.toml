@@ -1,7 +1,7 @@
 [versions]
 
-kotlin = "2.2.0"
-agp = "8.13.2"
+kotlin = "2.2.10"
+agp = "9.0.1"
 buildkonfig = "0.17.2"
 maven-publish = "0.34.0"
 compose = "1.8.2"
@@ -15,7 +15,7 @@ ktor = "3.2.2"
 ok-http3 = "4.12.0"
 sqlDelight = "2.1.0"
 multiplatformSettings = "1.3.0"
-buildConfig = "5.6.5"
+buildConfig = "6.0.10"
 androidx-activityCompose = "1.10.1"
 androidx-lifecycle = "2.8.4"
 ui = "1.10.6"
